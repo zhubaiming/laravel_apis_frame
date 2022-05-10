@@ -4,10 +4,6 @@
     "version": "1.0.0-beta",
     "type": "library",
     "keywords": "",
-    "license": [
-        "LGPL-2.1-only",
-        "LGPL-2.1-or-later"
-    ],
     "authors": [
         {
             "name": "Baiming",
