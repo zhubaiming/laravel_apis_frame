@@ -18,5 +18,21 @@
             "Baiming\\ApisFrame\\": "src/"
         }
     },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "ApisFrame\\ApisFrameServiceProvider"
+            ],
+            "aliases": {
+                "Auth": "ApisFrame\\Facades\\Auth",
+                "Batch": "ApisFrame\\Facades\\Batch",
+                "Download": "ApisFrame\\Facades\\Download",
+                "Jwt": "ApisFrame\\Facades\\Jwt",
+                "Pay": "ApisFrame\\Facades\\Pay",
+                "Sms": "ApisFrame\\Facades\\Sms",
+                "Upload": "ApisFrame\\Facades\\Upload"
+            }
+        }
+    },
     "minimum-stability": "beta"
 }
