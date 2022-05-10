@@ -6,18 +6,59 @@ class SmsManager
 {
     private $app;
 
+    protected $guards = [];
+
     public function __construct($app)
     {
         $this->app = $app;
+
+//        return $this->guard();
     }
 
-    public function guard()
+    public function guard($name = null)
     {
+        $name = $name ?? $this->getDefaultDriver();
 
+        return $this->guards[$name] ?? $this->guards[$name] = $this->resolve($name);
+    }
+
+    private function resolve($name = null)
+    {
+        $config = $this->getConfig($name);
+
+        if (is_null($config)) {
+            // 原函数中抛出一个 InvalidArgumentException 类型的异常
+        }
+
+        $driverMethod = 'create' . ucfirst($name) . 'Driver';
+
+        if (method_exists($this, $driverMethod)) {
+            return $this->{$driverMethod}($config);
+        }
+
+        // 原函数中抛出一个 InvalidArgumentException 类型的异常
+    }
+
+    private function getConfig($name)
+    {
+        return $this->app['config']["sms.connections.{$name}"];
+    }
+
+    private function getDefaultDriver()
+    {
+        // 获取 config/auth.php 中的对应参数，当前为【web】
+        return $this->app['config']['sms.defaults.guard'];
+    }
+
+    private function createAliyunDriver($config)
+    {
+        $guard = new AliyunGuard($config);
+
+        return $guard;
     }
 
     public function __call($method, $parameters)
     {
-        return $this->guard()->{$method}($parameters);
+        return $this->guard()->{$method}(...$parameters);
     }
 }

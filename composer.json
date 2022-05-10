@@ -1,19 +1,27 @@
 {
     "name": "baiming/apis_frame",
     "description": "api框架初始化系统",
+    "version": "1.0.0-beta",
     "type": "library",
+    "keywords": "",
+    "license": [
+        "LGPL-2.1-only",
+        "LGPL-2.1-or-later"
+    ],
+    "authors": [
+        {
+            "name": "Baiming",
+            "email": "hub.zhubaiming@gmail.com",
+            "role": "Master Developer"
+        }
+    ],
     "require": {
+        "alibabacloud/dysmsapi-20170525": "2.0.9"
     },
     "autoload": {
         "psr-4": {
             "Baiming\\ApisFrame\\": "src/"
         }
     },
-    "authors": [
-        {
-            "name": "Baiming",
-            "email": "hub.zhubaiming@gmail.com"
-        }
-    ],
-    "minimum-stability": "beta"
+    "minimum-stability": "stable"
 }
