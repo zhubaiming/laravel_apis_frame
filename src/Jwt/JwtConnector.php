@@ -86,11 +86,11 @@ class JwtConnector
      * @param $parameters
      * @return string
      */
-    private function sign($parameters)
+    private function sign($user)
     {
         $header = $this->setHeader();
 
-        $payload = $this->setPayload($parameters[0]);
+        $payload = $this->setPayload($user);
 
         $signature = $this->setSignature($this->modality['alg'], "{$header}.{$payload}");
 
@@ -103,9 +103,9 @@ class JwtConnector
      * @param $parameters
      * @return false|mixed
      */
-    private function check($parameters)
+    private function check(string $token)
     {
-        $jwt = explode('.', $parameters[0]);
+        $jwt = explode('.', $token);
 
         if (3 != count($jwt)) return false; // TODO：格式错误 // throw new
 
@@ -280,7 +280,7 @@ class JwtConnector
 
     public function __call($method, $parameters)
     {
-        return $this->guard()->{$method}($parameters);
+        return $this->guard()->{$method}(...$parameters);
     }
 
 //    public static function __callStatic($method, $parameters)
