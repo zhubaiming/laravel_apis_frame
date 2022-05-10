@@ -9,7 +9,7 @@ use ApisFrame\Jwt\JwtConnector;
 use ApisFrame\Pay\PayManager;
 use ApisFrame\Sms\SmsManager;
 use ApisFrame\Upload\UploadManager;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\ServiceProvider;
 
 class ApisFrameServiceProvider extends ServiceProvider
@@ -66,5 +66,7 @@ class ApisFrameServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->publishes($this->paths);
+
+        Artisan::call('vendor:publish', ['--provider' => 'App\Providers\AppServiceProvider']);
     }
 }
