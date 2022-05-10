@@ -19,5 +19,5 @@
             "Baiming\\ApisFrame\\": "src/"
         }
     },
-    "minimum-stability": "stable"
+    "minimum-stability": "beta"
 }
