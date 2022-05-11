@@ -11,8 +11,6 @@ class SmsManager
     public function __construct($app)
     {
         $this->app = $app;
-
-//        return $this->guard();
     }
 
     public function guard($name = null)

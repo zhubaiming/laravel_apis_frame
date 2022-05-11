@@ -282,9 +282,4 @@ class JwtConnector
     {
         return $this->guard()->{$method}(...$parameters);
     }
-
-//    public static function __callStatic($method, $parameters)
-//    {
-//        return 'callStatic' . $method;
-//    }
 }
