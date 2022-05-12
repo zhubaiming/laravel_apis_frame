@@ -24,10 +24,6 @@ class SmsManager
     {
         $config = $this->getConfig($name);
 
-        if (is_null($config)) {
-            // 原函数中抛出一个 InvalidArgumentException 类型的异常
-        }
-
         $driverMethod = 'create' . ucfirst($name) . 'Driver';
 
         if (method_exists($this, $driverMethod)) {
@@ -39,7 +35,7 @@ class SmsManager
 
     private function getConfig($name)
     {
-        return $this->app['config']["sms.connections.{$name}"];
+        return $this->app['config']["sms.connections.$name"];
     }
 
     private function getDefaultDriver()
@@ -50,9 +46,16 @@ class SmsManager
 
     private function createAliyunDriver($config)
     {
-        $guard = new AliyunGuard($config);
+        if (is_null($config)) {
+            throw new \Exception("短信无法下发，请联系管理员进行短信配置",20001);
+        }
 
-        return $guard;
+        return new AliyunGuard($config);
+    }
+
+    private function createWechatOffiaccountDriver($config)
+    {
+        return new WechatOffiaccountGuard($config);
     }
 
     public function __call($method, $parameters)
