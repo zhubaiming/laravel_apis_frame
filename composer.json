@@ -13,6 +13,9 @@
     "require": {
         "alibabacloud/dysmsapi-20170525": "2.0.9"
     },
+    "require-dev": {
+        "ext-bcmath": "*"
+    },
     "autoload": {
         "psr-4": {
             "ApisFrame\\": "src/"

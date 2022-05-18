@@ -2,13 +2,19 @@
 
 namespace ApisFrame\Jwt;
 
+use ApisFrame\Exceptions\Jwt\JwtException;
+use ApisFrame\Support\enums\ApisError;
+use Illuminate\Support\Facades\Log;
+
 class JwtConnector
 {
-    protected $app;
+    protected object $app;
 
     private int $time;
 
     private array $modality;
+
+    private string $logChannel = 'jwt';
 
     private array $supportedAlgs = [
         'ES384' => ['openssl', 'SHA384'],
@@ -34,6 +40,7 @@ class JwtConnector
      *
      * @param $modality
      * @return $this
+     * @throws JwtException
      */
     public function guard($modality = null)
     {
@@ -47,10 +54,9 @@ class JwtConnector
     /**
      * 获取默认配置名称
      *
-     * @param $modality
-     * @return mixed
+     * @return string
      */
-    private function getDefaultDriver()
+    private function getDefaultDriver(): string
     {
         return $this->app['config']['jwt.default'];
     }
@@ -60,10 +66,16 @@ class JwtConnector
      *
      * @param $modality
      * @return void
+     * @throws JwtException
      */
     private function getDefaultModality($modality)
     {
-        $_modality = $this->app['config']["jwt.modality.{$modality}"];
+        $_modality = $this->app['config']["jwt.modality.$modality"];
+
+        if (is_null($_modality)) {
+            Log::channel($this->logChannel)->error("获取 token 配置失败(10001)：当前调用的配置【 $modality 】不存在");
+            throw new JwtException(...ApisError::getError('jwt', 10001));
+        }
 
         $_modality['key'] = $this->getDefaultKey($_modality['key']);
 
@@ -73,54 +85,55 @@ class JwtConnector
     /**
      * 格式化密钥
      *
-     * @return void
+     * @param $key
+     * @return string
      */
-    private function getDefaultKey($key)
+    private function getDefaultKey($key): string
     {
-        return trim(preg_replace('/(.*)\:/', '', $key));
+        return trim(preg_replace('/(.*):/', '', $key));
     }
 
     /**
      * 生成 token
      *
-     * @param $parameters
+     * @param array $user
      * @return string
+     * @throws JwtException
      */
-    private function sign($user)
+    private function sign(array $user): string
     {
         $header = $this->setHeader();
 
         $payload = $this->setPayload($user);
 
-        $signature = $this->setSignature($this->modality['alg'], "{$header}.{$payload}");
+        $signature = $this->setSignature($this->modality['alg'], "$header.$payload");
 
-        return "{$header}.{$payload}.{$signature}";
+        return "$header.$payload.$signature";
     }
 
     /**
      * 验证 token
      *
-     * @param $parameters
-     * @return false|mixed
+     * @param string $token
+     * @return string
+     * @throws JwtException
      */
-    private function check(string $token)
+    private function check(string $token): string
     {
         $jwt = explode('.', $token);
 
-        if (3 != count($jwt)) return false; // TODO：格式错误 // throw new
+        if (3 != count($jwt)) throw new JwtException(...ApisError::getError('jwt', 10002));
 
         list($header, $payload, $signature) = $jwt;
 
         $alg = $this->getHeader($header)['alg'];
 
-        $signatureNew = $this->setSignature($alg, "{$header}.{$payload}");
+        $signatureNew = $this->setSignature($alg, "$header.$payload");
 
         if ($signature === $signatureNew) {
             return $this->checkPayload($payload);
         } else {
-            // TODO：格式错误
-            // throw new
-            return false;
+            throw new JwtException(...ApisError::getError('jwt', 10003));
         }
     }
 
@@ -129,7 +142,7 @@ class JwtConnector
      *
      * @return void
      */
-    private function refresh()
+    private function refresh(): string
     {
         // TODO: Implement refresh() method.
     }
@@ -137,9 +150,9 @@ class JwtConnector
     /**
      * 设置头信息
      *
-     * @return array|string|string[]
+     * @return string
      */
-    private function setHeader()
+    private function setHeader(): string
     {
         $header = ['typ' => 'JWT', 'alg' => $this->modality['alg']];
 
@@ -149,10 +162,10 @@ class JwtConnector
     /**
      * 获取头信息
      *
-     * @param $header
-     * @return mixed
+     * @param string $header
+     * @return array
      */
-    private function getHeader($header)
+    private function getHeader(string $header): array
     {
         return json_decode($this->urlSafeBase64Decode($header), true);
     }
@@ -160,11 +173,10 @@ class JwtConnector
     /**
      * 设置荷载信息
      *
-     * @param $userInfo
-     * @param int $effectiveTime
-     * @return array|string|string[]
+     * @param array $userInfo
+     * @return string
      */
-    private function setPayload($userInfo)
+    private function setPayload(array $userInfo): string
     {
         $payload = [
             'iss' => $this->modality['iss'],                                                                 // 签发者
@@ -185,10 +197,10 @@ class JwtConnector
     /**
      * 获取荷载信息
      *
-     * @param $payload
-     * @return mixed
+     * @param string $payload
+     * @return array
      */
-    private function getPayload($payload)
+    private function getPayload(string $payload): array
     {
         return json_decode($this->urlSafeBase64Decode($payload), true);
     }
@@ -196,30 +208,23 @@ class JwtConnector
     /**
      * 设置签名信息
      *
-     * @param $alg
-     * @param $str
-     * @return array|false|string|string[]
+     * @param string $alg
+     * @param string $str
+     * @return string
+     * @throws JwtException
      */
-    private function setSignature($alg, $str)
+    private function setSignature(string $alg, string $str): string
     {
-        if (empty($this->supportedAlgs[$alg])) return false; // TODO：格式错误 // throw new
+        if (empty($this->supportedAlgs[$alg])) throw new JwtException(...ApisError::getError('jwt', 10004));
 
         list($function, $algorithm) = $this->supportedAlgs[$alg];
 
-        switch ($function) {
-            case 'openssl':
-                $signature = '';
-                break;
-            case 'hash_hmac':
-                $signature = hash_hmac($algorithm, $str, $this->modality['key'], true);
-                break;
-            case 'sodium_crypto':
-                $signature = '';
-                break;
-            default:
-                $signature = '';
-                break;
-        }
+        $signature = match ($function) {
+            'openssl' => '',
+            'hash_hmac' => hash_hmac($algorithm, $str, $this->modality['key'], true),
+            'sodium_crypto' => '',
+            default => throw new JwtException(...ApisError::getError('jwt', 10013)),
+        };
 
         return $this->urlSafeBase64Encode($signature);
     }
@@ -228,9 +233,9 @@ class JwtConnector
      * base64 url 安全加密
      *
      * @param string $str
-     * @return array|string|string[]
+     * @return string
      */
-    private function urlSafeBase64Encode(string $str)
+    private function urlSafeBase64Encode(string $str): string
     {
         return str_replace('=', '', strtr(base64_encode($str), '+/', '-_'));
     }
@@ -239,9 +244,9 @@ class JwtConnector
      * base64 url 安全解密
      *
      * @param string $str
-     * @return false|string
+     * @return string
      */
-    private function urlSafeBase64Decode(string $str)
+    private function urlSafeBase64Decode(string $str): string
     {
         $remainder = strlen($str) % 4;
         if ($remainder) {
@@ -255,26 +260,29 @@ class JwtConnector
      * 检查荷载是否匹配
      *
      * @param $payload
-     * @return false|mixed
+     * @return string
+     * @throws JwtException
      */
-    private function checkPayload($payload)
+    private function checkPayload($payload): string
     {
         $payload = $this->getPayload($payload);
 
-        if ($payload['iss'] != $this->modality['iss']) return false; // TODO：格式错误 // throw new 签发者
-        if ($payload['sub'] != $this->modality['sub']) return false; // TODO：格式错误 // throw new 所面向的用户
-        if ($payload['aud'] != $this->modality['aud']) return false; // TODO：格式错误 // throw new 接收的一方
+        if ($payload['iss'] != $this->modality['iss']) throw new JwtException(...ApisError::getError('jwt', 10005));
+        if ($payload['sub'] != $this->modality['sub']) throw new JwtException(...ApisError::getError('jwt', 10006));
+        if ($payload['aud'] != $this->modality['aud']) throw new JwtException(...ApisError::getError('jwt', 10007));
 
-        if ($payload['iat'] > $this->time) return false; // TODO：格式错误 // throw new 签发时间
-        if ($payload['nbf'] > $this->time) return false; // TODO：格式错误 // throw new 生效时间
-        if ($payload['exp'] <= $this->time) return false; // TODO：格式错误 // throw new 过期时间
+        if ($payload['iat'] > $this->time) throw new JwtException(...ApisError::getError('jwt', 10008));
+        if ($payload['nbf'] > $this->time) throw new JwtException(...ApisError::getError('jwt', 10009));
+        if ($payload['exp'] <= $this->time) throw new JwtException(...ApisError::getError('jwt', 10010));
 
         if (!empty($payload['user_info'])) {
-            return $payload['user_info']['user_id'];
+            if (!empty($payload['user_info']['user_id'])) {
+                return $payload['user_info']['user_id'];
+            } else {
+                throw new JwtException(...ApisError::getError('jwt', 10012));
+            }
         } else {
-            // TODO：格式错误
-            // throw new
-            return false;
+            throw new JwtException(...ApisError::getError('jwt', 10011));
         }
     }
 
