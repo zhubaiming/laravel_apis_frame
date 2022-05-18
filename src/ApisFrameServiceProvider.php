@@ -22,27 +22,22 @@ class ApisFrameServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->singleton('Auth', function ($app) {
-            return new AuthManager($app);
-        });
-        $this->app->singleton('Batch', function ($app) {
-            return new BatchManager($app);
-        });
-        $this->app->singleton('Download', function ($app) {
-            return new DownloadManager($app);
-        });
-        $this->app->singleton('Jwt', function ($app) {
-            return new JwtConnector($app);
-        });
-        $this->app->singleton('Pay', function ($app) {
-            return new PayManager($app);
-        });
-        $this->app->singleton('Sms', function ($app) {
-            return new SmsManager($app);
-        });
-        $this->app->singleton('Upload', function ($app) {
-            return new UploadManager($app);
-        });
+        $singletons = [
+            ['abstract' => 'Auth', 'class' => 'AuthManager'],
+            ['abstract' => 'Batch', 'class' => 'BatchManager'],
+            ['abstract' => 'Download', 'class' => 'DownloadManager'],
+            ['abstract' => 'Jwt', 'class' => 'JwtConnector'],
+            ['abstract' => 'Pay', 'class' => 'PayManager'],
+            ['abstract' => 'Sms', 'class' => 'SmsManager'],
+            ['abstract' => 'Upload', 'class' => 'UploadManager'],
+        ];
+
+        foreach ($singletons as $singleton) {
+            $className = 'ApisFrame\\' . $singleton['abstract'] . '\\' . $singleton['class'];
+            $this->app->singleton($singleton['abstract'], function ($app) use ($className) {
+                return new $className($app);
+            });
+        }
     }
 
     /**
@@ -107,7 +102,6 @@ class ApisFrameServiceProvider extends ServiceProvider
 
         Artisan::call('vendor:publish', ['--provider' => __CLASS__]);
     }
-
 
 
     public function mergeConfigFrom($path, $key)
