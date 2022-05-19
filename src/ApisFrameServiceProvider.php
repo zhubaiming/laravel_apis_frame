@@ -2,13 +2,6 @@
 
 namespace ApisFrame;
 
-use ApisFrame\Auth\AuthManager;
-use ApisFrame\Batch\BatchManager;
-use ApisFrame\Download\DownloadManager;
-use ApisFrame\Jwt\JwtConnector;
-use ApisFrame\Pay\PayManager;
-use ApisFrame\Sms\SmsManager;
-use ApisFrame\Upload\UploadManager;
 use Illuminate\Contracts\Foundation\CachesConfiguration;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\ServiceProvider;
